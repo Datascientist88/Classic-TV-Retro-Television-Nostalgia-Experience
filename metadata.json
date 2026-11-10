@@ -1,0 +1,6 @@
+{
+  "name": "Classic TV – Retro Television & Nostalgia Experience",
+  "description": "An authentic vintage CRT television simulator featuring public domain classics, 1950s-1980s broadcasts, vintage commercials, cartoons, retro music player, TV guide, and multiple TV eras.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

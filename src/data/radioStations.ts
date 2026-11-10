@@ -1,0 +1,80 @@
+import { RadioStation } from '../types/tv';
+
+export const RADIO_STATIONS: RadioStation[] = [
+  {
+    id: 'station-80s-synth',
+    name: 'Neon Horizon FM 88.5',
+    frequency: '88.5 MHz',
+    era: '1980s',
+    genre: 'Synthwave & City Pop',
+    description: 'Analog synthesizers, Roland TR-808 beats, and late-night highway cruise nostalgia.',
+    // Public streams / archive audio streams
+    streamUrl: 'https://archive.org/download/classic-commercials-volume-1/01%20Mr.%20Clean.mp3',
+    trackList: [
+      'Sunset Drive – Miami Heatwave',
+      'Midnight FM – Analog Dreams',
+      'Cassette Deck 1984 – Electric Avenue',
+      'Arcade Neon – High Score Hero',
+    ],
+  },
+  {
+    id: 'station-50s-jazz',
+    name: 'Blue Note Lounge 92.1',
+    frequency: '92.1 MHz',
+    era: '1950s',
+    genre: 'Midnight Jazz & Blues',
+    description: 'Smoky club jazz, muted Miles-style trumpets, upright bass, and vinyl surface warmth.',
+    streamUrl: 'https://archive.org/download/78_st-louis-blues_louis-armstrong-and-his-orchestra-w.-c.-handy_gbia0001004a/01%20St.%20Louis%20Blues%20-%20Part%201.mp3',
+    trackList: [
+      'Round Midnight – Vanguard Trio',
+      'Harlem Stroll – Red Garland Style',
+      'Autumn Nocturne – Chet Baker Tone',
+      'Coffee & Cigarettes – Blue Velvet Quartet',
+    ],
+  },
+  {
+    id: 'station-60s-soul',
+    name: 'Hitsville Detroit 96.3',
+    frequency: '96.3 MHz',
+    era: '1960s',
+    genre: 'Motown, Soul & R&B',
+    description: 'Tambourines, baritone sax, soulful vocal harmonies, and irresistible sixties dance grooves.',
+    streamUrl: 'https://archive.org/download/classic-commercials-volume-1/02%20Alka%20Seltzer.mp3',
+    trackList: [
+      'Dancing on Grand Blvd – The Velvelettes Tribute',
+      'Soul Shing-a-ling – Funk Brothers Tribute',
+      'Greenwich Village Stomp – 60s Hammond B3',
+      'Atlantic Coast Serenade – Memphis Horns',
+    ],
+  },
+  {
+    id: 'station-70s-funk',
+    name: 'Groove Central 102.7',
+    frequency: '102.7 MHz',
+    era: '1970s',
+    genre: '70s Funk & Disco',
+    description: 'Slap bass, wah-wah guitars, Fender Rhodes keyboards, and Studio 54 mirrorball energy.',
+    streamUrl: 'https://archive.org/download/classic-commercials-volume-1/03%20Brylcreem.mp3',
+    trackList: [
+      'Soul Train Express – 75 Funk Line',
+      'Roller Disco Boogie – Venice Boardwalk',
+      'Superfly Strut – Curtis Groove',
+      'Midnight Express – 1977 Studio Take',
+    ],
+  },
+  {
+    id: 'station-otr-mystery',
+    name: 'Radio Mystery Theater 107.9',
+    frequency: '107.9 MHz',
+    era: '1940s',
+    genre: 'Old Time Radio Theater',
+    description: 'Classic dramatic broadcasts, shadowy noir private eyes, creaking doors, and chilling suspense.',
+    streamUrl: 'https://archive.org/download/OTRR_Suspense_Singles/Suspense_1943-09-23_059_The_Hitch-Hiker.mp3',
+    trackList: [
+      'The Hitch-Hiker (Orson Welles) – Suspense',
+      'The House in Cypress Canyon – OTR Mystery',
+      'Philip Marlowe: The Red Wind',
+      'Inner Sanctum: The Creaking Door',
+    ],
+  },
+];
