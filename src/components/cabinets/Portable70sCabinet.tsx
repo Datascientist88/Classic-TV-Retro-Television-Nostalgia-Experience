@@ -15,6 +15,7 @@ interface Portable70sCabinetProps {
   onOpenGuide: () => void;
   onNextChannel: () => void;
   onTriggerStatic: () => void;
+  onToggleMute?: () => void;
 }
 
 export const Portable70sCabinet: React.FC<Portable70sCabinetProps> = ({
@@ -28,6 +29,7 @@ export const Portable70sCabinet: React.FC<Portable70sCabinetProps> = ({
   onOpenGuide,
   onNextChannel,
   onTriggerStatic,
+  onToggleMute,
 }) => {
   const [knobRotation, setKnobRotation] = useState(0);
 
@@ -84,6 +86,7 @@ export const Portable70sCabinet: React.FC<Portable70sCabinetProps> = ({
                   volume={settings.volume}
                   isMuted={settings.isMuted}
                   onNextChannel={onNextChannel}
+                  onToggleMute={onToggleMute}
                   osdMessage={osdMessage}
                 />
               </div>

@@ -16,6 +16,7 @@ interface Trinitron80sCabinetProps {
   onOpenGuide: () => void;
   onNextChannel: () => void;
   onTriggerStatic: () => void;
+  onToggleMute?: () => void;
 }
 
 const EIGHTIES_YEARS = [1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989];
@@ -32,6 +33,7 @@ export const Trinitron80sCabinet: React.FC<Trinitron80sCabinetProps> = ({
   onOpenGuide,
   onNextChannel,
   onTriggerStatic,
+  onToggleMute,
 }) => {
   const [knob1Rotation, setKnob1Rotation] = useState(45);
   const [knob2Rotation, setKnob2Rotation] = useState(120);
@@ -105,6 +107,7 @@ export const Trinitron80sCabinet: React.FC<Trinitron80sCabinetProps> = ({
                   volume={settings.volume}
                   isMuted={settings.isMuted}
                   onNextChannel={onNextChannel}
+                  onToggleMute={onToggleMute}
                   osdMessage={osdMessage}
                 />
               </div>

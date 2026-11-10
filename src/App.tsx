@@ -46,15 +46,22 @@ const ALL_GENRES: GenreType[] = [
   'Sci-Fi',
 ];
 
+const STORAGE_KEY = 'classic_tv_programs_v4';
+
 export default function App() {
-  // Programs Catalog State
+  // Programs Catalog State - with automatic migration from stale cache
   const [programs, setPrograms] = useState<TVProgram[]>(() => {
     try {
-      const saved = localStorage.getItem('classic_tv_programs');
-      return saved ? JSON.parse(saved) : INITIAL_PROGRAMS;
-    } catch {
-      return INITIAL_PROGRAMS;
-    }
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed: TVProgram[] = JSON.parse(saved);
+        // Ensure items have direct mp4 sources
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].source === 'direct') {
+          return parsed;
+        }
+      }
+    } catch {}
+    return INITIAL_PROGRAMS;
   });
 
   // Settings State
@@ -73,7 +80,7 @@ export default function App() {
       scanlines: true,
       staticBurstOnSwitch: true,
       hissVolume: 30,
-      currentChannelNumber: 6,
+      currentChannelNumber: 2,
       activeGenreFilters: ALL_GENRES,
       selectedYear: null,
       channelSurfing: false,
@@ -83,7 +90,7 @@ export default function App() {
   // Active Program State
   const [currentProgramIndex, setCurrentProgramIndex] = useState(0);
   const [isTuning, setIsTuning] = useState(false);
-  const [osdMessage, setOsdMessage] = useState<string | null>('CH 06 · 1981 · MTV STEREO');
+  const [osdMessage, setOsdMessage] = useState<string | null>('CH 02 · 1956 · POPEYE FOR PRESIDENT');
 
   // Favorites & Watch History
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -117,7 +124,7 @@ export default function App() {
   // Sync to local storage
   useEffect(() => {
     try {
-      localStorage.setItem('classic_tv_programs', JSON.stringify(programs));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(programs));
     } catch {}
   }, [programs]);
 
@@ -392,6 +399,7 @@ export default function App() {
                 onAdjustVolume={handleAdjustVolume}
                 onOpenGuide={() => setIsGuideOpen(true)}
                 onNextChannel={() => handleChannelStep(1)}
+                onToggleMute={handleToggleMute}
                 onTriggerStatic={() => {
                   playStaticBurst(400, 0.4);
                   setIsTuning(true);
@@ -412,6 +420,7 @@ export default function App() {
                 onAdjustVolume={handleAdjustVolume}
                 onOpenGuide={() => setIsGuideOpen(true)}
                 onNextChannel={() => handleChannelStep(1)}
+                onToggleMute={handleToggleMute}
                 onTriggerStatic={() => {
                   playStaticBurst(400, 0.4);
                   setIsTuning(true);
@@ -431,6 +440,7 @@ export default function App() {
                 onAdjustVolume={handleAdjustVolume}
                 onOpenGuide={() => setIsGuideOpen(true)}
                 onNextChannel={() => handleChannelStep(1)}
+                onToggleMute={handleToggleMute}
                 onTriggerStatic={() => {
                   playStaticBurst(400, 0.4);
                   setIsTuning(true);
@@ -450,6 +460,7 @@ export default function App() {
                 onAdjustVolume={handleAdjustVolume}
                 onOpenGuide={() => setIsGuideOpen(true)}
                 onNextChannel={() => handleChannelStep(1)}
+                onToggleMute={handleToggleMute}
                 onTriggerStatic={() => {
                   playStaticBurst(400, 0.4);
                   setIsTuning(true);

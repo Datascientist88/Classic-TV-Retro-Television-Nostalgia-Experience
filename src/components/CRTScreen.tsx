@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ScreenFilter, TVProgram } from '../types/tv';
-import { Volume2, VolumeX, AlertCircle, RefreshCw } from 'lucide-react';
+import { Volume2, VolumeX, AlertCircle, RefreshCw, Play, Pause } from 'lucide-react';
+import { playKnobClick } from '../utils/audioEffects';
 
 interface CRTScreenProps {
   isPoweredOn: boolean;
@@ -12,6 +13,7 @@ interface CRTScreenProps {
   volume: number;
   isMuted: boolean;
   onNextChannel?: () => void;
+  onToggleMute?: () => void;
   osdMessage?: string | null;
 }
 
@@ -25,11 +27,17 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
   volume,
   isMuted,
   onNextChannel,
+  onToggleMute,
   osdMessage,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   const [powerPhase, setPowerPhase] = useState<'off' | 'turning-on' | 'on' | 'turning-off'>('off');
   const [streamError, setStreamError] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isAutoplayMuted, setIsAutoplayMuted] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
 
   // Power state animation sequencer
   useEffect(() => {
@@ -50,10 +58,67 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
     }
   }, [isPoweredOn]);
 
-  // Reset stream error on program change
+  // Reset stream states on program change
   useEffect(() => {
     setStreamError(false);
+    setIsVideoLoading(true);
   }, [currentProgram?.id]);
+
+  // Robust HTML5 Video Playback & Autoplay handling
+  useEffect(() => {
+    if (!videoRef.current || !isPoweredOn || isTuning || !currentProgram) return;
+
+    const video = videoRef.current;
+    video.volume = isMuted || isAutoplayMuted ? 0 : volume / 100;
+
+    const attemptPlay = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoPlaying(true);
+            setIsVideoLoading(false);
+          })
+          .catch(() => {
+            // Browser autoplay policy blocked unmuted audio: fallback to muted playback
+            video.muted = true;
+            setIsAutoplayMuted(true);
+            video.play()
+              .then(() => {
+                setIsVideoPlaying(true);
+                setIsVideoLoading(false);
+              })
+              .catch(() => {
+                setIsVideoPlaying(false);
+              });
+          });
+      }
+    };
+
+    attemptPlay();
+  }, [currentProgram?.id, isPoweredOn, isTuning, volume, isMuted, isAutoplayMuted]);
+
+  // Handle user click on CRT screen to toggle play or unmute audio
+  const handleScreenClick = () => {
+    if (!videoRef.current) return;
+    playKnobClick();
+
+    if (isAutoplayMuted) {
+      setIsAutoplayMuted(false);
+      videoRef.current.muted = false;
+      videoRef.current.volume = volume / 100;
+      if (onToggleMute && isMuted) {
+        onToggleMute();
+      }
+    }
+
+    if (videoRef.current.paused) {
+      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
 
   // Animated TV static noise generator on canvas
   useEffect(() => {
@@ -74,23 +139,23 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
     const renderStatic = () => {
       for (let i = 0; i < data.length; i += 4) {
         const val = (Math.random() * 255) | 0;
-        data[i] = val;     // R
-        data[i + 1] = val; // G
-        data[i + 2] = val; // B
-        data[i + 3] = 255; // A
+        data[i] = val;
+        data[i + 1] = val;
+        data[i + 2] = val;
+        data[i + 3] = 255;
       }
       ctx.putImageData(imgData, 0, 0);
       animId = requestAnimationFrame(renderStatic);
     };
 
-    if (isTuning || !currentProgram || streamError) {
+    if (isTuning || !currentProgram || streamError || isVideoLoading) {
       renderStatic();
     }
 
     return () => {
       cancelAnimationFrame(animId);
     };
-  }, [isTuning, currentProgram, streamError]);
+  }, [isTuning, currentProgram, streamError, isVideoLoading]);
 
   // Filter CSS styles
   const getFilterStyle = (): React.CSSProperties => {
@@ -107,19 +172,15 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
     }
   };
 
-  // Embed URL for YouTube
-  const getEmbedUrl = (videoId: string) => {
-    return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&fs=1`;
-  };
+  const isDirectVideo = currentProgram && (currentProgram.source === 'direct' || currentProgram.videoId.startsWith('http'));
 
   if (powerPhase === 'off') {
     return (
       <div className="relative w-full h-full bg-[#050608] flex items-center justify-center overflow-hidden select-none">
-        {/* Pitch black CRT tube with glassy dormant curvature and room reflection */}
         <div className="absolute inset-0 bg-radial from-transparent via-[#08090c]/70 to-[#020203] pointer-events-none" />
         <div className="absolute inset-0 opacity-15 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
         <div className="text-stone-700/40 text-xs font-mono tracking-widest uppercase">
-          CRT STANDBY
+          CRT STANDBY · TURN POWER ON
         </div>
       </div>
     );
@@ -127,20 +188,21 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
 
   return (
     <div
-      className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center select-none ${
+      onClick={handleScreenClick}
+      className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center select-none cursor-pointer ${
         curvature ? 'crt-curvature' : ''
       }`}
     >
       {/* Power-on beam animation */}
       {powerPhase === 'turning-on' && (
-        <div className="absolute inset-0 z-40 bg-black flex items-center justify-center animate-crt-turn-on">
+        <div className="absolute inset-0 z-40 bg-black flex items-center justify-center animate-crt-turn-on pointer-events-none">
           <div className="w-full h-[3px] bg-cyan-100 shadow-[0_0_20px_#fff,0_0_40px_#38bdf8]" />
         </div>
       )}
 
       {/* Power-off collapse animation */}
       {powerPhase === 'turning-off' && (
-        <div className="absolute inset-0 z-40 bg-black flex items-center justify-center">
+        <div className="absolute inset-0 z-40 bg-black flex items-center justify-center pointer-events-none">
           <div className="w-2 h-2 rounded-full bg-cyan-100 shadow-[0_0_30px_#fff,0_0_50px_#38bdf8] animate-ping" />
         </div>
       )}
@@ -151,37 +213,51 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
         style={getFilterStyle()}
       >
         {currentProgram && !isTuning && !streamError ? (
-          currentProgram.source === 'youtube' ? (
+          isDirectVideo ? (
+            <video
+              ref={videoRef}
+              key={currentProgram.id}
+              src={currentProgram.videoId}
+              autoPlay
+              playsInline
+              loop
+              muted={isMuted || isAutoplayMuted}
+              className="w-full h-full object-contain bg-black"
+              onCanPlay={() => {
+                setIsVideoLoading(false);
+                videoRef.current?.play().catch(() => {});
+              }}
+              onLoadedData={() => {
+                setIsVideoLoading(false);
+              }}
+              onPlay={() => setIsVideoPlaying(true)}
+              onPause={() => setIsVideoPlaying(false)}
+              onError={(e) => {
+                console.warn('Video load error', e);
+                setStreamError(true);
+              }}
+            />
+          ) : (
             <iframe
               key={currentProgram.id}
-              src={getEmbedUrl(currentProgram.videoId)}
+              src={`https://www.youtube-nocookie.com/embed/${currentProgram.videoId}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&fs=1`}
               title={currentProgram.title}
               className="w-full h-full border-0 absolute inset-0 object-cover"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               onError={() => setStreamError(true)}
             />
-          ) : (
-            <video
-              key={currentProgram.id}
-              src={currentProgram.videoId}
-              autoPlay
-              controls
-              muted={isMuted}
-              className="w-full h-full object-contain bg-black"
-              onError={() => setStreamError(true)}
-            />
           )
         ) : null}
 
-        {/* Static Snow Canvas (Visible during channel tuning or no signal) */}
-        {(isTuning || !currentProgram || streamError) && (
+        {/* Static Snow Canvas (Visible during channel tuning, loading, or signal loss) */}
+        {(isTuning || !currentProgram || streamError || isVideoLoading) && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black">
             <canvas
               ref={canvasRef}
-              className="absolute inset-0 w-full h-full object-cover opacity-90 mix-blend-screen"
+              className="absolute inset-0 w-full h-full object-cover opacity-85 mix-blend-screen"
             />
-            {streamError && (
+            {streamError ? (
               <div className="relative z-20 px-6 py-4 bg-stone-900/90 border border-stone-700/80 rounded-lg text-center backdrop-blur-sm max-w-sm">
                 <AlertCircle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
                 <p className="text-amber-200 font-crt text-xl tracking-wider mb-1">
@@ -192,14 +268,22 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
                 </p>
                 {onNextChannel && (
                   <button
-                    onClick={onNextChannel}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNextChannel();
+                    }}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded text-xs font-mono transition-colors"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Tune Next Channel
                   </button>
                 )}
               </div>
-            )}
+            ) : isVideoLoading ? (
+              <div className="relative z-20 px-4 py-2 bg-black/70 border border-amber-500/30 rounded text-amber-300 font-crt text-lg tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                TUNING FREQUENCY...
+              </div>
+            ) : null}
           </div>
         )}
       </div>
@@ -230,12 +314,31 @@ export const CRTScreen: React.FC<CRTScreenProps> = ({
         aria-hidden="true"
       />
 
+      {/* Autoplay Muted / Tap to Unmute Banner */}
+      {isAutoplayMuted && isVideoPlaying && (
+        <div className="absolute bottom-4 inset-x-6 z-30 pointer-events-none flex justify-center animate-bounce">
+          <div className="bg-amber-950/90 border border-amber-500/80 px-4 py-1.5 rounded-full text-amber-200 font-mono text-xs shadow-lg flex items-center gap-2">
+            <VolumeX className="w-3.5 h-3.5 text-amber-400" />
+            <span>CLICK SCREEN TO UNMUTE AUDIO</span>
+          </div>
+        </div>
+      )}
+
+      {/* Paused Overlay Indicator */}
+      {!isVideoPlaying && !isVideoLoading && !isTuning && (
+        <div className="absolute inset-0 z-25 bg-black/40 flex items-center justify-center pointer-events-none">
+          <div className="w-16 h-16 rounded-full bg-amber-500/20 border-2 border-amber-400/60 flex items-center justify-center text-amber-300 shadow-[0_0_20px_rgba(245,158,11,0.4)]">
+            <Play className="w-8 h-8 ml-1 fill-current" />
+          </div>
+        </div>
+      )}
+
       {/* Vintage On-Screen Display (OSD) in Phosphor Green */}
       {osdMessage && (
         <div className="absolute top-4 left-4 z-30 pointer-events-none font-crt tracking-widest text-[#4af626] text-xl sm:text-2xl drop-shadow-[0_0_6px_rgba(74,246,38,0.8)] flex items-center gap-3 bg-black/60 px-3 py-1.5 border border-[#4af626]/30 rounded">
           <span>{osdMessage}</span>
           <div className="flex items-center gap-1 text-sm border-l border-[#4af626]/40 pl-2">
-            {isMuted ? (
+            {isMuted || isAutoplayMuted ? (
               <span className="flex items-center gap-1 text-red-400">
                 <VolumeX className="w-4 h-4" /> MUTE
               </span>

@@ -15,6 +15,7 @@ interface Modern90sCabinetProps {
   onOpenGuide: () => void;
   onNextChannel: () => void;
   onTriggerStatic: () => void;
+  onToggleMute?: () => void;
 }
 
 export const Modern90sCabinet: React.FC<Modern90sCabinetProps> = ({
@@ -28,6 +29,7 @@ export const Modern90sCabinet: React.FC<Modern90sCabinetProps> = ({
   onOpenGuide,
   onNextChannel,
   onTriggerStatic,
+  onToggleMute,
 }) => {
   return (
     <div className="relative mx-auto w-full max-w-4xl flex flex-col items-center">
@@ -77,6 +79,7 @@ export const Modern90sCabinet: React.FC<Modern90sCabinetProps> = ({
                   volume={settings.volume}
                   isMuted={settings.isMuted}
                   onNextChannel={onNextChannel}
+                  onToggleMute={onToggleMute}
                   osdMessage={osdMessage}
                 />
               </div>

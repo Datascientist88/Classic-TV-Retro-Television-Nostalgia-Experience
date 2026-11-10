@@ -16,6 +16,7 @@ interface Console50sCabinetProps {
   onOpenGuide: () => void;
   onNextChannel: () => void;
   onTriggerStatic: () => void;
+  onToggleMute?: () => void;
 }
 
 export const Console50sCabinet: React.FC<Console50sCabinetProps> = ({
@@ -30,6 +31,7 @@ export const Console50sCabinet: React.FC<Console50sCabinetProps> = ({
   onOpenGuide,
   onNextChannel,
   onTriggerStatic,
+  onToggleMute,
 }) => {
   const [antennaAngle, setAntennaAngle] = useState(38);
   const [knobRotation, setKnobRotation] = useState(0);
@@ -132,6 +134,7 @@ export const Console50sCabinet: React.FC<Console50sCabinetProps> = ({
                   volume={settings.volume}
                   isMuted={settings.isMuted}
                   onNextChannel={onNextChannel}
+                  onToggleMute={onToggleMute}
                   osdMessage={osdMessage}
                 />
               </div>
